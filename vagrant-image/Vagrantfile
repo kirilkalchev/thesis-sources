@@ -1,0 +1,32 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/trusty32"
+  config.vm.box_check_update = false
+
+  config.vm.network :forwarded_port, guest: 1337, host: 31337
+  config.vm.synced_folder "~/repos/", "/repos"
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.cpus = 2
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update
+    sudo apt-get install -y nginx mongodb-server git
+    sudo -u root bash -c 'curl -sL https://deb.nodesource.com/setup | sudo bash -'
+    sudo apt-get install -y nodejs
+    sudo ln -s /usr/bin/nodejs /usr/bin/node
+    sudo -u root bash -c 'curl -L https://npmjs.org/install.sh | sh'
+    sudo npm install -g bower
+    sudo npm install -g sails
+    git clone https://github.com/elsix/vmfs-http-sync.git
+    cd vmfs-http-sync/ && sudo npm install -g
+  SHELL
+end
