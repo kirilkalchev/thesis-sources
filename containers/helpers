@@ -1,0 +1,6 @@
+#!/bin/bash
+
+function connect-container() {
+  local name=$1
+  vagrant ssh -c "sudo docker exec -it $name /bin/bash"
+}

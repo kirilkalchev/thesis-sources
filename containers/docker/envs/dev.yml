@@ -1,0 +1,11 @@
+web:
+  build: ../images/
+  dockerfile: nodejs
+  command: /bin/bash
+  hostname: web
+  volumes:
+    - '/repos/angular-jointjs-graph-demo/:/app'
+  ports:
+   - "1337:1337"
+  tty: true
+
