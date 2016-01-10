@@ -1,0 +1,11 @@
+description	"vmfs-http-sync server"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+respawn limit 10 5
+
+script
+  exec vmfs-http-sync server --server 0.0.0.0 --port 50080 --sharedDir /repos/ --destDir /repos_local --logLevel info
+end script

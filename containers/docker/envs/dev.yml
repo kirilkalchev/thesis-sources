@@ -4,8 +4,16 @@ web:
   command: /bin/bash
   hostname: web
   volumes:
-    - '/repos/angular-jointjs-graph-demo/:/app'
+    - '/repos_local/angular-jointjs-graph-demo/:/app'
   ports:
    - "1337:1337"
+  links:
+   - db:db
+  tty: true
+db:
+  build: ../images/
+  dockerfile: mongo
+  command: /bin/bash
+  hostanme: db
   tty: true
 
