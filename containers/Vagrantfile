@@ -10,6 +10,7 @@ Vagrant.configure(2) do |config|
   config.vm.box_check_update = false
 
   config.vm.network :forwarded_port, guest: 1337, host: 31337
+  config.vm.network :forwarded_port, guest: 50080, host: 50080
   config.vm.synced_folder "~/repos/", "/repos"
 
   config.vm.provider "virtualbox" do |v|
@@ -20,6 +21,12 @@ Vagrant.configure(2) do |config|
   config.vm.provision "file", source: "vmfs-http-sync.init", destination: "vmfs-http-sync.conf"
   config.vm.provision "file", source: "docker", destination: "docker"
   config.vm.provision "shell", inline: <<-SHELL
+    # Mounting repos on boot
+    sudo bash -c 'echo "vboxsf" >> /etc/initramfs-tools/modules'
+    sudo bash -c 'update-initramfs -u'
+    sudo bash -c 'echo "repos                   /repos   vboxsf defaults        0 0" >> /etc/fstab'
+
+    # Installing needed software
     sudo apt-get update
     sudo apt-get install -y git
     sudo apt-get install -y nodejs
@@ -28,6 +35,7 @@ Vagrant.configure(2) do |config|
     git clone https://github.com/elsix/vmfs-http-sync.git
     cd vmfs-http-sync/ && sudo npm install -g
 
+    # Installing docker toolchain
     sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
     sudo bash -c "echo 'deb https://apt.dockerproject.org/repo ubuntu-trusty main' > /etc/apt/sources.list.d/docker.list"
     sudo apt-get update
@@ -36,10 +44,13 @@ Vagrant.configure(2) do |config|
     sudo bash -c 'curl -L https://github.com/docker/compose/releases/download/1.5.2/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose'
     sudo chmod +x /usr/local/bin/docker-compose
 
+    # Preparing vmfs-http-sync tool
     sudo bash -c "cp /home/vagrant/vmfs-http-sync.conf /etc/init/vmfs-http-sync.conf"
     sudo service vmfs-http-sync start
+    # Wating for vmfs-http-sync server to start
     while [[ `curl --max-time 1 -s -o /dev/null -w "%{http_code}" http://127.0.0.1:50080/status` -ne "200" ]]; do echo 'waiting for vmfs-http-sync'; sleep 1; done
 
+    # Starting docker app focker environment
     sudo bash -c "cd /home/vagrant/docker/envs/ && docker-compose -f dev.yml build && docker-compose -f dev.yml -p app up -d"
   SHELL
 end
