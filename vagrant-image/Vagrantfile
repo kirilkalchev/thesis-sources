@@ -10,6 +10,7 @@ Vagrant.configure(2) do |config|
   config.vm.box_check_update = false
 
   config.vm.network :forwarded_port, guest: 1337, host: 31337
+  config.vm.network :forwarded_port, guest: 50080, host: 50080
   config.vm.synced_folder "~/repos/", "/repos"
 
   config.vm.provider "virtualbox" do |v|
@@ -17,16 +18,32 @@ Vagrant.configure(2) do |config|
     v.cpus = 2
   end
 
+  config.vm.provision "file", source: "../vmfsconf/vmfs-http-sync.init", destination: "vmfs-http-sync.conf"
   config.vm.provision "shell", inline: <<-SHELL
-    sudo apt-get update
-    sudo apt-get install -y nginx mongodb-server git
+    # Mounting repos on boot
+    sudo bash -c 'echo "vboxsf" >> /etc/initramfs-tools/modules'
+    sudo bash -c 'update-initramfs -u'
+    sudo bash -c 'echo "repos                   /repos   vboxsf defaults        0 0" >> /etc/fstab'
+
+    # Installing needed software
     sudo -u root bash -c 'curl -sL https://deb.nodesource.com/setup | sudo bash -'
+    sudo apt-get update
+
+    # Preparing vmfs-http-sync tool
+    sudo apt-get install -y git
     sudo apt-get install -y nodejs
     sudo ln -s /usr/bin/nodejs /usr/bin/node
     sudo -u root bash -c 'curl -L https://npmjs.org/install.sh | sh'
-    sudo npm install -g bower
-    sudo npm install -g sails
     git clone https://github.com/elsix/vmfs-http-sync.git
     cd vmfs-http-sync/ && sudo npm install -g
+    sudo bash -c "cp /home/vagrant/vmfs-http-sync.conf /etc/init/vmfs-http-sync.conf"
+    sudo service vmfs-http-sync start
+    # Wating for vmfs-http-sync server to start
+    while [[ `curl --max-time 1 -s -o /dev/null -w "%{http_code}" http://127.0.0.1:50080/status` -ne "200" ]]; do echo 'waiting for vmfs-http-sync'; sleep 1; done
+
+    # Instaling missing application requirements
+    sudo apt-get install -y nginx mongodb-server git
+    sudo npm install -g bower
+    sudo npm install -g sails
   SHELL
 end
