@@ -18,7 +18,7 @@ Vagrant.configure(2) do |config|
     v.cpus = 2
   end
 
-  config.vm.provision "file", source: "vmfs-http-sync.init", destination: "vmfs-http-sync.conf"
+  config.vm.provision "file", source: "../vmfsconf/vmfs-http-sync.init", destination: "vmfs-http-sync.conf"
   config.vm.provision "file", source: "docker", destination: "docker"
   config.vm.provision "shell", inline: <<-SHELL
     # Mounting repos on boot
