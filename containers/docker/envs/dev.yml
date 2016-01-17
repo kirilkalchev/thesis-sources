@@ -8,12 +8,12 @@ web:
   ports:
    - "1337:1337"
   links:
-   - db:db
+   - 'db:db'
   tty: true
 db:
   build: ../images/
   dockerfile: mongo
-  command: /bin/bash
-  hostanme: db
+  command: mongod
+  hostname: db
   tty: true
 
