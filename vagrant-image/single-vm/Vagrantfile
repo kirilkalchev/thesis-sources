@@ -19,7 +19,7 @@ Vagrant.configure(2) do |config|
     v.cpus = 2
   end
 
-  config.vm.provision "file", source: "../vmfsconf/vmfs-http-sync.init", destination: "vmfs-http-sync.conf"
+  config.vm.provision "file", source: "../../vmfsconf/vmfs-http-sync.init", destination: "vmfs-http-sync.conf"
   config.vm.provision "shell", inline: <<-SHELL
     # Mounting repos on boot
     sudo bash -c 'echo "vboxsf" >> /etc/initramfs-tools/modules'
