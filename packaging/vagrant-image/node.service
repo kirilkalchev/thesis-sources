@@ -1,0 +1,18 @@
+# graph-demo.conf
+description "Graph Service Demo"
+
+start on started networking
+stop on runlevel [016]
+
+setuid root
+
+
+limit nofile 1000000 1000000
+
+script
+  cd /home/vagrant/app
+  export NODE_ENV='production'
+  sudo -u root /usr/bin/node ./app.js
+end script
+
+respawn

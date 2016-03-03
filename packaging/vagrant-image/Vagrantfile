@@ -1,0 +1,61 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.box_check_update = false
+
+  # Defines a private host network so we can expose whatever port we need from the virtual machine
+  config.vm.network "private_network", type: "dhcp", netmask: "255.255.0.0"
+  config.vm.network :forwarded_port, guest: 50080, host: 50080
+  config.vm.network :forwarded_port, guest: 8080, host: 80
+
+  config.vm.provision "file", source: "node.service", destination: "graph.service"
+  config.vm.provision "file", source: "graph.nginx.conf", destination: "graph.nginx.conf"
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.cpus = 2
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    # Installing needed software
+    sudo -u root bash -c 'curl -sL https://deb.nodesource.com/setup | sudo bash -'
+    sudo apt-get update
+
+    sudo apt-get install -y git
+    sudo apt-get install -y nodejs
+    if [ ! -f /usr/bin/node ]; then
+      sudo ln -s /usr/bin/nodejs /usr/bin/node
+    fi
+    sudo -u root bash -c 'curl -L https://npmjs.org/install.sh | sh'
+
+    # Instaling missing application requirements
+    sudo apt-get install -y nginx mongodb-server git
+    sudo npm install -g bower
+    sudo npm install -g sails
+
+    rm -rf app
+    git clone https://github.com/elsix/angular-jointjs-graph-demo.git app
+    cd /home/vagrant/app && npm install && bower install --allow-root && cd /home/vagrant/
+    sudo cp graph.service /etc/init/graph-demo.conf
+
+    if service graph-demo status | grep running >/dev/null 2>/dev/null; then
+      sudo service graph-demo restart
+    else
+      sudo service graph-demo start
+    fi
+
+    sudo rm -rf /etc/nginx/sites-enabled/*
+    sudo cp graph.nginx.conf /etc/nginx/sites-enabled/
+    if service nginx status | grep running >/dev/null 2>/dev/null; then
+      sudo service nginx restart
+    else
+      sudo service nginx start
+    fi
+  SHELL
+end
