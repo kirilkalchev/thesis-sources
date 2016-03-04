@@ -1,0 +1,27 @@
+web:
+  build: ../images/nginx
+  command: nginx -g 'daemon off;'
+  hostname: web
+  ports:
+   - "80:80"
+  links:
+   - 'app:app'
+  tty: true
+app:
+  build: ../images/node
+  working_dir: /app
+  command: node app.js
+  hostname: app
+  ports:
+   - "1337:1337"
+  links:
+   - 'db:db'
+  environment:
+   - NODE_ENV=production
+  tty: true
+db:
+  image: mongo:latest
+  hostname: db
+  tty: true
+
+
