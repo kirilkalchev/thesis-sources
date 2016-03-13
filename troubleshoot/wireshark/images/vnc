@@ -1,0 +1,11 @@
+FROM ubuntu:14.04
+
+RUN  apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y lxde-core lxterminal tightvncserver && rm -rf /var/lib/apt/lists/*
+RUN  mkdir /root/.vnc
+COPY vnc_xstartup /root/.vnc/xstartup
+RUN chmod +x /root/.vnc/xstartup
+RUN  echo 'vnc_pass' | vncpasswd -f > /root/.vnc/passwd
+RUN chmod 600 /root/.vnc/passwd
+RUN touch /root/.Xresources
+
+EXPOSE 5901

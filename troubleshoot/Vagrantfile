@@ -11,6 +11,11 @@ Vagrant.configure(2) do |config|
 
   # Defines a private host network so we can expose whatever port we need from the virtual machine
   config.vm.network "private_network", type: "dhcp", netmask: "255.255.0.0"
+  config.vm.network :forwarded_port, guest: 5901, host: 5901
+  config.vm.network :forwarded_port, guest: 6001, host: 6001
+
+  config.vm.provision "file", source: "rc.local", destination: "rc.local"
+  config.vm.provision "file", source: "docker.defaults", destination: "docker.defaults"
 
   config.vm.synced_folder "~/repos_diplomna/", "/repos"
 
@@ -21,6 +26,12 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
+    sudo apt-get install -y bridge-utils
+
+    # Prepare networking
+    sudo cp rc.local /etc/rc.local
+    sudo chmod 755 /etc/rc.local
+    sudo bash /etc/rc.local
 
     # Installing docker toolchain
     sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
@@ -28,8 +39,19 @@ Vagrant.configure(2) do |config|
     sudo apt-get update
     sudo apt-get install -y linux-image-extra-$(uname -r)
     sudo apt-get install -y docker-engine
+    sudo cp docker.defaults /etc/default/docker
+    sudo chmod 644 /etc/default/docker
+    sudo service docker restart
+    sudo ifconfig docker0 down
+    sudo brctl delbr docker0
+
     sudo bash -c 'curl -L https://github.com/docker/compose/releases/download/1.5.2/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose'
     sudo chmod +x /usr/local/bin/docker-compose
     sudo usermod -a -G docker vagrant
+  SHELL
+
+  # Clear bridged interface address because vagrant just put it back after machine starts
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    sudo bash /etc/rc.local 'only_clear'
   SHELL
 end

@@ -1,0 +1,23 @@
+wireshark:
+  build: ../images/
+  dockerfile: wireshark
+  command: wireshark
+  tty: true
+  net: host
+  privileged: true
+  environment:
+    - "DISPLAY=:1"
+  volumes_from:
+    - "vnc:rw"
+vnc:
+  build: ../images/
+  dockerfile: vnc
+  command: bash -c 'vncserver :1 -geometry 1280x800 -depth 24 && tail -F /root/.vnc/*.log'
+  tty: true
+  environment:
+    - USER=root
+  ports:
+    - "5901:5901"
+  volumes:
+    - "/tmp/.X11-unix"
+    - "/root/.Xauthority"
