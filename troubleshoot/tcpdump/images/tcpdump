@@ -1,0 +1,5 @@
+# RUN with docker run --rm -it --net=host tcpdump /bin/bash
+FROM ubuntu:14.04
+
+RUN  apt-get update && apt-get install -y tcpdump && rm -rf /var/lib/apt/lists/*
+

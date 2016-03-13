@@ -1,0 +1,7 @@
+tcpdump:
+  build: ../images/
+  dockerfile: tcpdump
+  command: /bin/bash
+  tty: true
+  net: host
+
